@@ -11,50 +11,6 @@ float map(float n, float start1, float stop1, float start2, float stop2)
     return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
 }
 
-sf::Image gen_mandelbrot(int actX, int actY, float zoom, int iterations, float x_translation, float y_translation)
-{
-    float diversion_threshold = 4.0;
-
-    sf::Image img_plane;
-    img_plane.create(actX, actY);
-
-    for (int x = 0; x < actX; x++)
-    {
-        for (int y = 0; y < actY; y++)
-        {
-            float z_real = map((float)x, 0.0, (float)actX, (-2.0 - x_translation) * zoom, (2.0 - x_translation) * zoom);
-            float z_imaginary = map((float)y, 0.0, (float)actY, (-2.0 + y_translation) * zoom, (2.0 + y_translation) * zoom);
-
-            float z_real_original = z_real;
-            float z_imaginary_original = z_imaginary;
-
-            float brightness = 0.0;
-
-            for (int n = 0; n <= iterations; n++)
-            {
-                float z_real_temp = z_real * z_real - z_imaginary * z_imaginary;
-                float z_imaginary_temp = 2.0 * z_real * z_imaginary;
-
-                z_real = z_real_temp + z_real_original;
-                z_imaginary = z_imaginary_temp + z_imaginary_original;
-
-                brightness = map((float)n, 0.0, (float)iterations, 0.0, 1.0);
-                brightness = map(sqrt(brightness), 0.0, 1.0, 0.0, 200.0);
-
-                if ((z_real * z_real + z_imaginary * z_imaginary) > diversion_threshold)
-                {
-                    break;
-                }
-            }
-
-            img_plane.setPixel(x, y, sf::Color(brightness, (int)(brightness * 0.67), (int)(brightness * 0.80), 255));
-        }
-    }
-
-    return img_plane;
-    /* Brooo that took like 7 minutes */
-}
-
 int main()
 {
     sf::Font font;
@@ -68,7 +24,7 @@ int main()
     const int HEIGHT = 500;
 
     float zoom = 1.0;
-    int iterations = 50;
+    int iterations = 35;
     const float zoom_increment = 0.0005;
     const float zoom_big_increment = 0.005;
     float imag_x_pos = 0.0;
@@ -77,9 +33,18 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Fractal generator");
 
+    sf::Shader shader;
+    if (!shader.loadFromFile("fragment_shader.frag", sf::Shader::Fragment))
+        std::cout << "failed to load shader\n";
+
+    shader.setUniform("window_width", WIDTH);
+    shader.setUniform("window_height", HEIGHT);
+    shader.setUniform("iterations", 100);
+
     sf::Texture texture;
     sf::Sprite sprite;
-    sf::Image img = gen_mandelbrot(WIDTH, HEIGHT, zoom, iterations, imag_x_pos, imag_y_pos);
+    sf::Image img;
+    img.create(WIDTH, HEIGHT, sf::Color::Black);
 
     sf::Text imag_xpos_text;
     sf::Text imag_ypos_text;
@@ -122,13 +87,10 @@ int main()
 
     while (window.isOpen())
     {
-        imag_xpos_text.setString("Imaginary X: " + std::to_string(imag_x_pos));
-        imag_ypos_text.setString("Imaginary Y: " + std::to_string(imag_y_pos));
+        imag_xpos_text.setString("Complex X: " + std::to_string(imag_x_pos));
+        imag_ypos_text.setString("Complex Y: " + std::to_string(imag_y_pos));
         zoom_text.setString("Detail: " + std::to_string(zoom));
         iterations_text.setString("Iterations: " + std::to_string(iterations));
-
-        img = gen_mandelbrot(WIDTH, HEIGHT, zoom, iterations, imag_x_pos, imag_y_pos);
-        texture.loadFromImage(img);
 
         sf::Event event;
         while (window.pollEvent(event))
@@ -136,11 +98,11 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
             {
                 imag_y_pos -= pos_increment;
             }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
             {
                 imag_y_pos += pos_increment;
             }
@@ -178,9 +140,14 @@ int main()
             }
         }
 
+        shader.setUniform("x_translation", imag_x_pos);
+        shader.setUniform("y_translation", imag_y_pos);
+        shader.setUniform("zoom", zoom);
+        shader.setUniform("iterations", iterations);
+
         window.clear();
 
-        window.draw(sprite);
+        window.draw(sprite, &shader);
 
         window.draw(imag_xpos_text);
         window.draw(imag_ypos_text);
