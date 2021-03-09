@@ -68,25 +68,28 @@ int main()
     const int font_size = 16;
     const int font_outline_thiccness = 1;
 
-    const int WIDTH = 720;
-    const int HEIGHT = 720;
+    const int WIDTH = 888;
+    const int HEIGHT = 888;
 
-    const float MAX_ZOOM = 0.004;
+    const float MAX_ZOOM = 0.0004;
     const float MIN_ZOOM = 5.0;
     const float DEFAULT_ZOOM = 2.5;
     const float DEFAULT_X_POS = 0;
     const float DEFAULT_Y_POS = 0;
+    const int DEFAULT_MAX_ITERATIONS = 455;
 
     const float POSITION_INCREMENT = 0.0025;
     const float POSITION_INCREMENT_LARGE = 0.1;
     const float ZOOM_INCREMENT = 0.0001;
     const float ZOOM_INCREMENT_LARGE = 0.005;
 
-    int max_iterations = 445;
+    int max_iterations = DEFAULT_MAX_ITERATIONS;
 
     float zoom = DEFAULT_ZOOM;
     float compX = DEFAULT_X_POS;
     float compY = DEFAULT_Y_POS;
+
+    bool auto_iterations = false;
 
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Fractal generator");
 
@@ -108,7 +111,7 @@ int main()
     sf::Sprite sprite;
     sf::RectangleShape img;
     img.setSize(sf::Vector2f(WIDTH, HEIGHT));
-    
+
     //img.create(WIDTH, HEIGHT, sf::Color::Black);
 
     sf::CircleShape crosshair(1.5);
@@ -158,9 +161,16 @@ int main()
     iterations_text.setPosition(10, 80);
     fps_text.setPosition(10, 100);
 
-
     while (window.isOpen())
     {
+        if (auto_iterations)
+        {
+            if (fps >= 100)
+                max_iterations += 1;
+            else
+                max_iterations -= 1;
+        }
+
         imag_xpos_text.setString("Complex X: " + std::to_string(compX));
         imag_ypos_text.setString("Complex Y: " + std::to_string(compY));
         zoom_text.setString("Detail: " + std::to_string(zoom));
@@ -330,6 +340,20 @@ int main()
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::V))
             {
                 shader.setUniform("color", 6);
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+            {
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    auto_iterations = false;
+                    max_iterations = DEFAULT_MAX_ITERATIONS;
+                }
+                else
+                {
+                    auto_iterations = true;
+                }
             }
         }
 
