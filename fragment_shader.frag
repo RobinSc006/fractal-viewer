@@ -22,22 +22,24 @@ void main()
 
     float saved_brightness = 0.0;
 
-    float real_translated_a = ((-2.0 - x_translation));
-    float real_translated_b = ((2.0 - x_translation));
+    double real_translated_a = ((-2.0 - x_translation));
+    double real_translated_b = ((2.0 - x_translation));
 
-    float imaginary_translated_a = ((-2.0 + y_translation));
-    float imaginary_translated_b = ((2.0 + y_translation));
+    double imaginary_translated_a = ((-2.0 + y_translation));
+    double imaginary_translated_b = ((2.0 + y_translation));
+
+    double actZoom =  double(zoom * 0.0001);
 
     //float z_real = map(gl_FragCoord.x, 0.0, float(window_width), real_translated_a * zoom, real_translated_b * zoom);
     //float z_imaginary = map(gl_FragCoord.y, 0.0, float(window_height), imaginary_translated_a * zoom, imaginary_translated_b * zoom);
 
-    float z_real = x_translation + (gl_FragCoord.x/window_width - 0.5) * zoom;
-    float z_imaginary = y_translation + (gl_FragCoord.y/window_height - 0.5) * zoom;
+    double z_real = x_translation + (gl_FragCoord.x/window_width - 0.5) * actZoom;
+    double z_imaginary = y_translation + (gl_FragCoord.y/window_height - 0.5) * actZoom;
 
-    float z_real_original = z_real;
-    float z_imaginary_original = z_imaginary;
-    float z_real_temp;
-    float z_imaginary_temp;
+    double z_real_original = z_real;
+    double z_imaginary_original = z_imaginary;
+    double z_real_temp;
+    double z_imaginary_temp;
 
     float brightness = 0.0;
 

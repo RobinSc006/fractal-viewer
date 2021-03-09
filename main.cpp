@@ -12,7 +12,7 @@ float map(float n, float start1, float stop1, float start2, float stop2)
     return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
 }
 
-bool set_waypoint(float x_pos, float y_pos, float zoom, int key)
+bool set_waypoint(float x_pos, float y_pos, double zoom, int key)
 {
     std::string x_string = std::to_string(x_pos);
     std::string y_string = std::to_string(y_pos);
@@ -33,7 +33,7 @@ bool set_waypoint(float x_pos, float y_pos, float zoom, int key)
     // ? Life's goooood. Man, this is my absolute favorite project ever!
 }
 
-bool load_waypoint(int key, float &x_trans, float &y_trans, float &zoom)
+bool load_waypoint(int key, float &x_trans, float &y_trans, double &zoom)
 {
     std::string line;
     std::ifstream myfile("waypoints/" + std::to_string(key) + ".wp");
@@ -49,7 +49,7 @@ bool load_waypoint(int key, float &x_trans, float &y_trans, float &zoom)
             else if (counter == 1)
                 y_trans = std::stof(line);
             else if (counter == 2)
-                zoom = std::stof(line);
+                zoom = std::stod(line);
             counter++;
         }
         myfile.close();
@@ -71,12 +71,13 @@ int main()
     const int WIDTH = 888;
     const int HEIGHT = 888;
 
-    const float MAX_ZOOM = 0.0004;
+    const double MAX_ZOOM = 0.000001;
     const float MIN_ZOOM = 5.0;
-    const float DEFAULT_ZOOM = 2.5;
+    const double DEFAULT_ZOOM = 2.5;
     const float DEFAULT_X_POS = 0;
     const float DEFAULT_Y_POS = 0;
     const int DEFAULT_MAX_ITERATIONS = 455;
+    const float MIN_POS_INCREMENT = 0.00004;
 
     const float POSITION_INCREMENT = 0.0025;
     const float POSITION_INCREMENT_LARGE = 0.1;
@@ -85,7 +86,7 @@ int main()
 
     int max_iterations = DEFAULT_MAX_ITERATIONS;
 
-    float zoom = DEFAULT_ZOOM;
+    double zoom = DEFAULT_ZOOM;
     float compX = DEFAULT_X_POS;
     float compY = DEFAULT_Y_POS;
 
@@ -187,44 +188,44 @@ int main()
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compY -= POSITION_INCREMENT_LARGE * zoom * zoom;
+                    compY -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
                 else
                 {
-                    compY -= POSITION_INCREMENT * zoom * zoom;
+                    compY -= POSITION_INCREMENT * zoom * zoom  + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compY += POSITION_INCREMENT_LARGE * zoom * zoom;
+                    compY += POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
                 else
                 {
-                    compY += POSITION_INCREMENT * zoom * zoom;
+                    compY += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compX -= POSITION_INCREMENT_LARGE * zoom * zoom;
+                    compX -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
                 else
                 {
-                    compX -= POSITION_INCREMENT * zoom * zoom;
+                    compX -= POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compX += POSITION_INCREMENT_LARGE * zoom * zoom;
+                    compX += POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
                 else
                 {
-                    compX += POSITION_INCREMENT * zoom * zoom;
+                    compX += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
@@ -359,7 +360,7 @@ int main()
 
         shader.setUniform("x_translation", compX);
         shader.setUniform("y_translation", compY);
-        shader.setUniform("zoom", zoom * zoom);
+        shader.setUniform("zoom", ((float)(zoom * zoom)) * 10000);
         shader.setUniform("iterations", max_iterations);
 
         window.clear();
