@@ -64,4 +64,24 @@ void main()
     if (color == 3) gl_FragColor = vec4(0.0, brightness, 0.0, 1.0);
     if (color == 4) gl_FragColor = vec4(brightness, 0.0, brightness * 0.67, 1.0);
     if (color == 5) gl_FragColor = vec4(brightness * 0.1, brightness, brightness * 0.56, 1.0);
+    if (color == 6) {
+        if (brightness <= 0.2) {
+            gl_FragColor = vec4(brightness * 0.10, 0.0, brightness * 0.10, 1.0);
+        }
+        else if (brightness <= 0.3) {
+            gl_FragColor = vec4(brightness * 0.55, 0.0, brightness * 0.33, 1.0);
+        }
+        else if (brightness <= 0.5) {
+            gl_FragColor = vec4(brightness * 0.23, brightness * 0.5, brightness * 0.67, 1.0);
+        }
+        else if (brightness <= 0.7) {
+            gl_FragColor = vec4(brightness * 0.25, brightness * 0.25, brightness * 0.50, 1.0);
+        }
+        else if (brightness <= 0.8) {
+            gl_FragColor = vec4(brightness * 0.33, brightness, brightness * 0.36, 1.0);
+        }
+        else {
+            gl_FragColor = vec4(brightness * 0.20, 0.0, brightness * 0.05, 1.0);
+        }
+    }
 }

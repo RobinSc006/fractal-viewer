@@ -30,7 +30,7 @@ bool set_waypoint(float x_pos, float y_pos, float zoom, int key)
     {
         return false;
     }
-    /* Life's goooood. Man, this is my absolute favorite project ever!*/
+    // ? Life's goooood. Man, this is my absolute favorite project ever!
 }
 
 bool load_waypoint(int key, float &x_trans, float &y_trans, float &zoom)
@@ -65,11 +65,11 @@ int main()
     if (!font.loadFromFile("Roboto-Thin.ttf"))
         std::cout << "unable to load font\n";
 
-    const int font_size = 15;
+    const int font_size = 16;
     const int font_outline_thiccness = 1;
 
-    const int WIDTH = 700;
-    const int HEIGHT = 700;
+    const int WIDTH = 720;
+    const int HEIGHT = 720;
 
     const float MAX_ZOOM = 0.004;
     const float MIN_ZOOM = 5.0;
@@ -77,7 +77,8 @@ int main()
     const float DEFAULT_X_POS = 0;
     const float DEFAULT_Y_POS = 0;
 
-    const float POSITION_INCREMENT = 0.05;
+    const float POSITION_INCREMENT = 0.0025;
+    const float POSITION_INCREMENT_LARGE = 0.1;
     const float ZOOM_INCREMENT = 0.0001;
     const float ZOOM_INCREMENT_LARGE = 0.005;
 
@@ -88,6 +89,11 @@ int main()
     float compY = DEFAULT_Y_POS;
 
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Fractal generator");
+
+    float fps;
+    sf::Clock clock = sf::Clock();
+    sf::Time previousTime = clock.getElapsedTime();
+    sf::Time currentTime;
 
     sf::Shader shader;
     if (!shader.loadFromFile("fragment_shader.frag", sf::Shader::Fragment))
@@ -100,47 +106,58 @@ int main()
 
     sf::Texture texture;
     sf::Sprite sprite;
-    sf::Image img;
-    img.create(WIDTH, HEIGHT, sf::Color::Black);
+    sf::RectangleShape img;
+    img.setSize(sf::Vector2f(WIDTH, HEIGHT));
+    
+    //img.create(WIDTH, HEIGHT, sf::Color::Black);
+
+    sf::CircleShape crosshair(1.5);
+    crosshair.setFillColor(sf::Color::White);
+    crosshair.setPosition(WIDTH / 2, HEIGHT / 2);
+    bool draw_crosshair = true;
 
     sf::Text imag_xpos_text;
     sf::Text imag_ypos_text;
     sf::Text zoom_text;
     sf::Text iterations_text;
+    sf::Text fps_text;
 
     imag_xpos_text.setFont(font);
     imag_ypos_text.setFont(font);
     zoom_text.setFont(font);
     iterations_text.setFont(font);
+    fps_text.setFont(font);
 
     imag_xpos_text.setCharacterSize(font_size);
     imag_ypos_text.setCharacterSize(font_size);
     zoom_text.setCharacterSize(font_size);
     iterations_text.setCharacterSize(font_size);
+    fps_text.setCharacterSize(font_size);
 
     imag_xpos_text.setFillColor(sf::Color::White);
     imag_ypos_text.setFillColor(sf::Color::White);
     zoom_text.setFillColor(sf::Color::White);
     iterations_text.setFillColor(sf::Color::White);
+    fps_text.setFillColor(sf::Color::White);
 
     imag_xpos_text.setOutlineColor(sf::Color::Black);
     imag_ypos_text.setOutlineColor(sf::Color::Black);
     zoom_text.setOutlineColor(sf::Color::Black);
     iterations_text.setOutlineColor(sf::Color::Black);
+    fps_text.setOutlineColor(sf::Color::Black);
 
     imag_xpos_text.setOutlineThickness(font_outline_thiccness);
     imag_ypos_text.setOutlineThickness(font_outline_thiccness);
     zoom_text.setOutlineThickness(font_outline_thiccness);
     iterations_text.setOutlineThickness(font_outline_thiccness);
+    fps_text.setOutlineThickness(font_outline_thiccness);
 
     imag_xpos_text.setPosition(10, 20);
     imag_ypos_text.setPosition(10, 40);
     zoom_text.setPosition(10, 60);
     iterations_text.setPosition(10, 80);
+    fps_text.setPosition(10, 100);
 
-    texture.create(WIDTH, HEIGHT);
-    texture.loadFromImage(img);
-    sprite.setTexture(texture);
 
     while (window.isOpen())
     {
@@ -148,6 +165,7 @@ int main()
         imag_ypos_text.setString("Complex Y: " + std::to_string(compY));
         zoom_text.setString("Detail: " + std::to_string(zoom));
         iterations_text.setString("Iterations: " + std::to_string(max_iterations));
+        fps_text.setString("Fps: " + std::to_string(int(fps)));
 
         sf::Event event;
         while (window.pollEvent(event))
@@ -157,19 +175,47 @@ int main()
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
             {
-                compY -= POSITION_INCREMENT * zoom * zoom;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    compY -= POSITION_INCREMENT_LARGE * zoom * zoom;
+                }
+                else
+                {
+                    compY -= POSITION_INCREMENT * zoom * zoom;
+                }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
             {
-                compY += POSITION_INCREMENT * zoom * zoom;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    compY += POSITION_INCREMENT_LARGE * zoom * zoom;
+                }
+                else
+                {
+                    compY += POSITION_INCREMENT * zoom * zoom;
+                }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             {
-                compX -= POSITION_INCREMENT * zoom * zoom;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    compX -= POSITION_INCREMENT_LARGE * zoom * zoom;
+                }
+                else
+                {
+                    compX -= POSITION_INCREMENT * zoom * zoom;
+                }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
             {
-                compX += POSITION_INCREMENT * zoom * zoom;
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    compX += POSITION_INCREMENT_LARGE * zoom * zoom;
+                }
+                else
+                {
+                    compX += POSITION_INCREMENT * zoom * zoom;
+                }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
             {
@@ -199,26 +245,32 @@ int main()
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1))
             {
                 shader.setUniform("color", 0);
+                crosshair.setFillColor(sf::Color::Cyan);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
             {
                 shader.setUniform("color", 1);
+                crosshair.setFillColor(sf::Color::White);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
             {
                 shader.setUniform("color", 2);
+                crosshair.setFillColor(sf::Color::White);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
             {
                 shader.setUniform("color", 3);
+                crosshair.setFillColor(sf::Color::White);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num5))
             {
                 shader.setUniform("color", 4);
+                crosshair.setFillColor(sf::Color::White);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num6))
             {
                 shader.setUniform("color", 5);
+                crosshair.setFillColor(sf::Color::White);
             }
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::F1))
@@ -255,12 +307,29 @@ int main()
                     load_waypoint(2, compX, compY, zoom);
                 }
             }
-
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
             {
                 compX = DEFAULT_X_POS;
                 compY = DEFAULT_Y_POS;
                 zoom = DEFAULT_ZOOM;
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+            {
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                {
+                    draw_crosshair = false;
+                }
+                else
+                {
+                    draw_crosshair = true;
+                }
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::V))
+            {
+                shader.setUniform("color", 6);
             }
         }
 
@@ -271,14 +340,22 @@ int main()
 
         window.clear();
 
-        window.draw(sprite, &shader);
+        window.draw(img, &shader);
 
         window.draw(imag_xpos_text);
         window.draw(imag_ypos_text);
         window.draw(zoom_text);
         window.draw(iterations_text);
+        window.draw(fps_text);
+
+        if (draw_crosshair)
+            window.draw(crosshair);
 
         window.display();
+
+        currentTime = clock.getElapsedTime();
+        fps = 1.0f / (currentTime.asSeconds() - previousTime.asSeconds());
+        previousTime = currentTime;
     }
 
     return 0;
