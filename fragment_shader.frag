@@ -18,23 +18,22 @@ float map(float n, float start1, float stop1, float start2, float stop2)
 void main()
 {
 
+    double actZoom =  double(zoom * 0.000001);
+    actZoom = actZoom * actZoom;
+
+    double actX_trans =  double(x_translation * 0.00001);
+    double actY_trans =  double(y_translation * 0.00001);
+
 	float diversion_threshold = 4.0;
 
-    float saved_brightness = 0.0;
+    double real_translated_a = (-2.0 - actX_trans);
+    double real_translated_b = (2.0 - actX_trans);
 
-    double real_translated_a = ((-2.0 - x_translation));
-    double real_translated_b = ((2.0 - x_translation));
+    double imaginary_translated_a = (-2.0 + actY_trans);
+    double imaginary_translated_b = (2.0 + actY_trans);
 
-    double imaginary_translated_a = ((-2.0 + y_translation));
-    double imaginary_translated_b = ((2.0 + y_translation));
-
-    double actZoom =  double(zoom * 0.0001);
-
-    //float z_real = map(gl_FragCoord.x, 0.0, float(window_width), real_translated_a * zoom, real_translated_b * zoom);
-    //float z_imaginary = map(gl_FragCoord.y, 0.0, float(window_height), imaginary_translated_a * zoom, imaginary_translated_b * zoom);
-
-    double z_real = x_translation + (gl_FragCoord.x/window_width - 0.5) * actZoom;
-    double z_imaginary = y_translation + (gl_FragCoord.y/window_height - 0.5) * actZoom;
+    double z_real = actX_trans + (gl_FragCoord.x/window_width - 0.5) * actZoom;
+    double z_imaginary = actY_trans + (gl_FragCoord.y/window_height - 0.5) * actZoom;
 
     double z_real_original = z_real;
     double z_imaginary_original = z_imaginary;

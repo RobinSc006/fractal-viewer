@@ -1,29 +1,32 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/Audio.hpp>
 
 #include <math.h>
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 
 float map(float n, float start1, float stop1, float start2, float stop2)
 {
     return ((n - start1) / (stop1 - start1)) * (stop2 - start2) + start2;
 }
 
-bool set_waypoint(float x_pos, float y_pos, double zoom, int key)
+bool set_waypoint(double x_pos, double y_pos, double zoom, int key, sf::Sound &sound)
 {
-    std::string x_string = std::to_string(x_pos);
-    std::string y_string = std::to_string(y_pos);
-
     std::ofstream file("waypoints/" + std::to_string(key) + ".wp");
     if (file.is_open())
     {
-        file << x_string << std::endl;
-        file << y_string << std::endl;
+        file << std::setprecision(15);
+        file << x_pos << std::endl;
+        file << y_pos << std::endl;
         file << zoom;
         file.close();
+
+        sound.play();
         return true;
     }
     else
@@ -33,26 +36,27 @@ bool set_waypoint(float x_pos, float y_pos, double zoom, int key)
     // ? Life's goooood. Man, this is my absolute favorite project ever!
 }
 
-bool load_waypoint(int key, float &x_trans, float &y_trans, double &zoom)
+bool load_waypoint(int key, double &x_trans, double &y_trans, double &zoom)
 {
     std::string line;
-    std::ifstream myfile("waypoints/" + std::to_string(key) + ".wp");
+    std::ifstream file("waypoints/" + std::to_string(key) + ".wp");
 
     int counter = 0;
 
-    if (myfile.is_open())
+    if (file.is_open())
     {
-        while (getline(myfile, line))
+        file >> std::setprecision(15);
+        while (getline(file, line))
         {
             if (counter == 0)
-                x_trans = std::stof(line);
+                x_trans = std::stod(line);
             else if (counter == 1)
-                y_trans = std::stof(line);
+                y_trans = std::stod(line);
             else if (counter == 2)
                 zoom = std::stod(line);
             counter++;
         }
-        myfile.close();
+        file.close();
         return true;
     }
     else
@@ -68,31 +72,47 @@ int main()
     const int font_size = 16;
     const int font_outline_thiccness = 1;
 
-    const int WIDTH = 888;
-    const int HEIGHT = 888;
+    const int WIDTH = 550;
+    const int HEIGHT = 550;
 
-    const double MAX_ZOOM = 0.000001;
-    const float MIN_ZOOM = 5.0;
+    const double MAX_ZOOM = 5.2146e-07;
+    const double MIN_ZOOM = 5.0;
     const double DEFAULT_ZOOM = 2.5;
-    const float DEFAULT_X_POS = 0;
-    const float DEFAULT_Y_POS = 0;
+    const double DEFAULT_X_POS = 0;
+    const double DEFAULT_Y_POS = 0;
     const int DEFAULT_MAX_ITERATIONS = 455;
-    const float MIN_POS_INCREMENT = 0.00004;
+    const double MIN_POS_INCREMENT = 0.00003;
 
-    const float POSITION_INCREMENT = 0.0025;
-    const float POSITION_INCREMENT_LARGE = 0.1;
-    const float ZOOM_INCREMENT = 0.0001;
-    const float ZOOM_INCREMENT_LARGE = 0.005;
+    const double DEEP_LAYER = 0.00000015;
+    const double SURFACE_LAYER = 1.0;
+
+    const double POSITION_INCREMENT = 0.0055;
+    const double POSITION_INCREMENT_LARGE = 0.1;
+    //const float ZOOM_INCREMENT = 0.0001;
+    //const float ZOOM_INCREMENT_LARGE = 0.005;
+    const float ZOOM_INCREMENT = 0.002;
+    const float ZOOM_INCREMENT_LARGE = 0.02;
 
     int max_iterations = DEFAULT_MAX_ITERATIONS;
 
     double zoom = DEFAULT_ZOOM;
-    float compX = DEFAULT_X_POS;
-    float compY = DEFAULT_Y_POS;
+    double compX = DEFAULT_X_POS;
+    double compY = DEFAULT_Y_POS;
+
+    std::ostringstream compX_sstream;
+    std::ostringstream compY_sstream;
+    std::ostringstream zoom_sstream;
+    compX_sstream << std::fixed;
+    compY_sstream << std::fixed;
+    zoom_sstream << std::fixed;
+    compX_sstream << std::setprecision(15);
+    compY_sstream << std::setprecision(15);
+    zoom_sstream << std::setprecision(15);
+    
 
     bool auto_iterations = false;
 
-    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Fractal generator");
+    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Fractal viewer");
 
     float fps;
     sf::Clock clock = sf::Clock();
@@ -162,6 +182,22 @@ int main()
     iterations_text.setPosition(10, 80);
     fps_text.setPosition(10, 100);
 
+    /* Audio */
+    sf::SoundBuffer deep_layer_enter_sound_buffer;
+    sf::Sound deep_layer_enter_sound;
+    if (!deep_layer_enter_sound_buffer.loadFromFile("sound/deep_layer_enter.wav")) std::cout << "Failed loading sound\n"; 
+    deep_layer_enter_sound.setBuffer(deep_layer_enter_sound_buffer);
+
+    sf::SoundBuffer set_waypoint_sound_buffer;
+    sf::Sound set_waypoint_sound;
+    if (!set_waypoint_sound_buffer.loadFromFile("sound/set_waypoint.wav")) std::cout << "Failed loading sound\n"; 
+    set_waypoint_sound.setBuffer(set_waypoint_sound_buffer);
+
+    bool is_deep_layer = false;
+    bool is_surface_layer = false;
+    bool play_deep_layer_enter = true;
+
+
     while (window.isOpen())
     {
         if (auto_iterations)
@@ -172,9 +208,29 @@ int main()
                 max_iterations -= 1;
         }
 
-        imag_xpos_text.setString("Complex X: " + std::to_string(compX));
-        imag_ypos_text.setString("Complex Y: " + std::to_string(compY));
-        zoom_text.setString("Detail: " + std::to_string(zoom));
+        if (zoom * zoom <= DEEP_LAYER) is_deep_layer = true;
+        else is_deep_layer = false;
+        if (zoom * zoom >= SURFACE_LAYER) is_surface_layer = true;
+        else is_surface_layer = false;
+
+        if (is_surface_layer) play_deep_layer_enter = true;
+        if ((play_deep_layer_enter) && (is_deep_layer)) {deep_layer_enter_sound.play();play_deep_layer_enter = false;}
+
+
+        compX_sstream.str("");
+        compY_sstream.str("");
+        zoom_sstream.str("");
+        compX_sstream.clear();
+        compY_sstream.clear();
+        zoom_sstream.clear();
+       
+        compX_sstream << compX;
+        compY_sstream << compY;
+        zoom_sstream << (zoom * zoom);
+
+        imag_xpos_text.setString("Complex X: " + compX_sstream.str());
+        imag_ypos_text.setString("Complex Y: " + compY_sstream.str());
+        zoom_text.setString("Detail: " + zoom_sstream.str());
         iterations_text.setString("Iterations: " + std::to_string(max_iterations));
         fps_text.setString("Fps: " + std::to_string(int(fps)));
 
@@ -188,44 +244,44 @@ int main()
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compY -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compY -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
                 else
                 {
-                    compY -= POSITION_INCREMENT * zoom * zoom  + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compY -= POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compY += POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compY += POSITION_INCREMENT_LARGE * zoom * zoom  + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
                 else
                 {
-                    compY += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compY += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compX -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compX -= POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
                 else
                 {
-                    compX -= POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compX -= POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    compX += POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compX += POSITION_INCREMENT_LARGE * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);;
                 }
                 else
                 {
-                    compX += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT);
+                    compX += POSITION_INCREMENT * zoom * zoom + (MIN_POS_INCREMENT * MIN_POS_INCREMENT * MIN_POS_INCREMENT/2);;
                 }
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
@@ -288,7 +344,7 @@ int main()
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    set_waypoint(compX, compY, zoom, 0);
+                    set_waypoint(compX, compY, zoom, 0, set_waypoint_sound);
                 }
                 else
                 {
@@ -299,7 +355,7 @@ int main()
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    set_waypoint(compX, compY, zoom, 1);
+                    set_waypoint(compX, compY, zoom, 1, set_waypoint_sound);
                 }
                 else
                 {
@@ -311,7 +367,7 @@ int main()
             {
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                 {
-                    set_waypoint(compX, compY, zoom, 2);
+                    set_waypoint(compX, compY, zoom, 2, set_waypoint_sound);
                 }
                 else
                 {
@@ -358,9 +414,9 @@ int main()
             }
         }
 
-        shader.setUniform("x_translation", compX);
-        shader.setUniform("y_translation", compY);
-        shader.setUniform("zoom", ((float)(zoom * zoom)) * 10000);
+        shader.setUniform("x_translation", ((float)(compX * 100000)));
+        shader.setUniform("y_translation", ((float)(compY * 100000)));
+        shader.setUniform("zoom", ((float)(zoom)) * 1000000);
         shader.setUniform("iterations", max_iterations);
 
         window.clear();
