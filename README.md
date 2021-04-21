@@ -4,13 +4,13 @@ A real-time fractal viewer
 
 ## Info
 Yet another one of my personal projects. I am actually kind of proud of this one. 
-Running it requires a decent GPU, I would imagine, and building it on windows is
+Running it requires a decent GPU, I would imagine, and building it on Windows is
 a pain. 
 
 It's complete with waypoints, sound and a wide variety of colors. Keybinds are as follows:
 
 
-    f(1..3) (example: the key f1) + shift = set current positon as waypoint
+    f(1..3) (example: the key f1) + shift = set current position as waypoint
     f(1..3) = load waypoint
 
     movement with arrow keys
