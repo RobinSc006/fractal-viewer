@@ -33,7 +33,6 @@ bool set_waypoint(double x_pos, double y_pos, double zoom, int key, sf::Sound &s
     {
         return false;
     }
-    // ? Life's goooood. Man, this is my absolute favorite project ever!
 }
 
 bool load_waypoint(int key, double &x_trans, double &y_trans, double &zoom)
@@ -88,8 +87,6 @@ int main()
 
     const double POSITION_INCREMENT = 0.0055;
     const double POSITION_INCREMENT_LARGE = 0.1;
-    //const float ZOOM_INCREMENT = 0.0001;
-    //const float ZOOM_INCREMENT_LARGE = 0.005;
     const float ZOOM_INCREMENT = 0.002;
     const float ZOOM_INCREMENT_LARGE = 0.02;
 
@@ -132,8 +129,6 @@ int main()
     sf::Sprite sprite;
     sf::RectangleShape img;
     img.setSize(sf::Vector2f(WIDTH, HEIGHT));
-
-    //img.create(WIDTH, HEIGHT, sf::Color::Black);
 
     sf::CircleShape crosshair(1.5);
     crosshair.setFillColor(sf::Color::White);
