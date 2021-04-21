@@ -31,3 +31,6 @@ Movement doesn't work that well, when zoomed in beyond a certain point.
 
 I made this for myself, and to show off to family/friends, so I did not anticipate
 that anyone would ever see the code. If I made some critical mistake, that's my excuse. 
+
+## Screenshot
+![fractals](https://user-images.githubusercontent.com/57567946/115564674-fac79c80-a2b8-11eb-98d0-40ca957a5950.png)
