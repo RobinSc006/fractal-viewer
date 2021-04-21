@@ -28,3 +28,6 @@ It's complete with waypoints, sound and a wide variety of colors. Keybinds are a
     
 
 Movement doesn't work that well, when zoomed in beyond a certain point.
+
+I made this for myself, and to show off to family/friends, so I did not anticipate
+that anyone would ever see the code. If I made some critical mistake, that's my excuse. 
